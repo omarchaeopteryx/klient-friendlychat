@@ -105,6 +105,8 @@ function FriendlyChat() {
   this.signInButton = document.getElementById('sign-in');
   this.signOutButton = document.getElementById('sign-out');
   this.signInSnackbar = document.getElementById('must-signin-snackbar');
+  this.messageFormWhenDatePending = document.getElementById('whenDatePending');
+  this.messageFormWhenTimePending = document.getElementById('whenTimePending');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -237,9 +239,17 @@ FriendlyChat.prototype.saveMessage = function(e) {
 
   // Check that the user entered a message and is signed in:
   if (this.messageInput.value && this.checkSignedInWithMessage()) {
+    var currentUser = this.auth.currentUser;
+
+    // Send the inputted date/time suggestion to the event it's associated with:
+    var chatsRef = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/');
+    chatsRef.update({
+      approved: false,
+      whenDatePending: this.messageFormWhenDatePending.value,
+      whenTimePending: this.messageFormWhenTimePending.value
+    });
 
     // Push new message to Firebase:
-    var currentUser = this.auth.currentUser;
     messagesChatsRef.push({
       chatId: this.chatItemDataSpecific,
       name: currentUser.displayName,
