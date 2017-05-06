@@ -282,3 +282,8 @@ h1,h2,h3,h4,h5 { font-family: Avenir }
   justify-content: center;
   color: blue;
 }
+
+.pending-notification {
+  color: pink;
+  font-size: 2em;
+}

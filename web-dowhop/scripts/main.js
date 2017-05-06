@@ -189,11 +189,25 @@ FriendlyChat.prototype.loadChats = function() {
       button.setAttribute('id', snap.key);
       button.innerHTML = snap.val().title;
       let myReset = this.newChatPopup;
+      var pendingNotification;
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
         myReset.setAttribute("hidden", "true"); // <-- Reset error messages.
         myViewMessageList.innerText = ''; // <-- Reset the form.
         myChatData.innerText = snap.val().title;
+
+        // let myChatDataNotification = FriendlyChat.APPROVAL_TEMPLATE; // <-- Check
+        if (firebase.auth().currentUser.uid == snap.val().creator) {
+          pendingNotification = "You made this!";
+        } else { pendingNotification = "Someone else made this!"}
+
+        if (snap.val().pending != null) {
+           whenDatePending = snap.val().pending.whenDatePending;
+           whenTimePending = snap.val().pending.whenTimePending;
+        } else { var whenDatePending = "TBD"; var whenTimePending = "TBD"};
+
+        // myChatDataNotification.innerHTML = snap.val().pending.whenDatePending;
+
         myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
                 "<p>Click  to load messages.</p>" +
                 "<h5>What?</h5>" +
@@ -203,7 +217,12 @@ FriendlyChat.prototype.loadChats = function() {
                 "<h5>Who?</h5>" +
                 "<p>" + snap.val().who + "</p>" +
                 "<h5>Where?</h5>" +
-                "<p>" + snap.val().where + "</p>"
+                "<p>" + snap.val().where + "</p>" + pendingNotification +
+                "<div class='pending-notification'" + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
+                "<p class='pending-notification'>" +
+                whenTimePending + "</p>" + "</div>"
+
+        // myChatData.appendChild(div);
       });
       myView.appendChild(button);
   });
@@ -487,6 +506,10 @@ FriendlyChat.CHAT_TEMPLATE =
 
 // A loading image URL.
 FriendlyChat.LOADING_IMAGE_URL = 'https://www.google.com/images/spin-32.gif';
+
+// Tempalte for approval-denial of time-change form:
+FriendlyChat.APPROVAL_TEMPLATE =
+  '<div class="pending-style">' + '<div>' + '<button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect dowhop-button">' + '</button>' + '</div>' + '</div>';
 
 // Displays a Message in the UI.
 FriendlyChat.prototype.displayMessage = function(key, name, text, picUrl, imageUri) {
