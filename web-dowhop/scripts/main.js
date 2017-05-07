@@ -109,6 +109,7 @@ function FriendlyChat() {
   this.messageFormWhenTimePending = document.getElementById('whenTimePending');
   this.approvalForm = document.getElementById('approve-pending-form');
   this.rescindingForm = document.getElementById('rescind-pending-form');
+  this.pendingDiv = document.getElementById('pending-div');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -184,6 +185,7 @@ FriendlyChat.prototype.loadChats = function() {
   var myChatData = this.chatItemData;
   var myApprovalForm = this.approvalForm;
   var myRescindingForm = this.rescindingForm;
+  var pendingDiv = this.pendingDiv;
 
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
@@ -202,11 +204,13 @@ FriendlyChat.prototype.loadChats = function() {
         myViewMessageList.innerText = '';
         myApprovalForm.setAttribute("hidden", "true");
         myRescindingForm.setAttribute("hidden", "true");
+        pendingDiv.setAttribute("hidden", "true");
+
         myChatData.innerText = snap.val().title;
 
         // We are checking whether the current user is the owner of the thread.
         // let myChatDataNotification = FriendlyChat.APPROVAL_TEMPLATE; // <-- Check
-        if (firebase.auth().currentUser.uid == snap.val().creator) {
+        if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator) {
           pendingNotification = "Someone else has requested this time.\nDo you want to approve it?"
           myApprovalForm.removeAttribute('hidden');
         } else if (snap.val().pending && firebase.auth().currentUser.uid == snap.val().pending.requester) {
@@ -214,10 +218,14 @@ FriendlyChat.prototype.loadChats = function() {
           myRescindingForm.removeAttribute('hidden')
         }
 
+        // Preparing the time-pending notification:
         if (snap.val().pending != null) {
            whenDatePending = snap.val().pending.whenDatePending;
            whenTimePending = snap.val().pending.whenTimePending;
-        } else { var whenDatePending = "TBD"; var whenTimePending = "TBD"};
+           pendingDiv.removeAttribute('hidden');
+           pendingDiv.innerHTML = pendingNotification + "\nRequested: " + whenDatePending + " at " + whenTimePending;
+
+        } else { var whenDatePending = "TBD"; var whenTimePending = "TBD" };
 
         // myChatDataNotification.innerHTML = snap.val().pending.whenDatePending;
 
@@ -230,10 +238,10 @@ FriendlyChat.prototype.loadChats = function() {
                 "<h5>Who?</h5>" +
                 "<p>" + snap.val().who + "</p>" +
                 "<h5>Where?</h5>" +
-                "<p>" + snap.val().where + "</p>" +
-                "<div class='pending-notification'>" + pendingNotification + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
-                "<p class='pending-notification'>" +
-                whenTimePending + "</p>" + "</div>"
+                "<p>" + snap.val().where + "</p>"
+                // "<div class='pending-notification'>" + pendingNotification + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
+                // "<p class='pending-notification'>" +
+                // whenTimePending + "</p>" + "</div>"
 
         // var container = document.createElement('div');
         // container.innerHTML = "<form><input type='radio' name='approval' value='approve'>Approve<input type='radio' name='approval' value='deny'>Deny<button type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send</button></form>"
