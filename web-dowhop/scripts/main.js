@@ -196,6 +196,7 @@ FriendlyChat.prototype.loadChats = function() {
         myViewMessageList.innerText = ''; // <-- Reset the form.
         myChatData.innerText = snap.val().title;
 
+        // We are checking whether the current user is the owner of the thread.
         // let myChatDataNotification = FriendlyChat.APPROVAL_TEMPLATE; // <-- Check
         if (firebase.auth().currentUser.uid == snap.val().creator) {
           pendingNotification = "You made this!";
@@ -263,9 +264,10 @@ FriendlyChat.prototype.saveMessage = function(e) {
     // Send the inputted date/time suggestion to the event it's associated with:
     var chatsRef = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/');
     chatsRef.update({
-      approved: false,
+      status: true,
       whenDatePending: this.messageFormWhenDatePending.value,
-      whenTimePending: this.messageFormWhenTimePending.value
+      whenTimePending: this.messageFormWhenTimePending.value,
+      requester: currentUser.uid
     });
 
     // Push new message to Firebase:

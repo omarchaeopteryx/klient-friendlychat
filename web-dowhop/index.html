@@ -107,8 +107,29 @@
                   <input type="text" id="message">
                   <span class="bar">
                 </label>
-                <input type="text" id="whenDatePending" placeholder="Date Change...">
-                <input type="text" id="whenTimePending" placeholder="Time Change...">
+                <!-- Adding the time-change-request inputs here -->
+                <div id="when-icon-div">
+                  <label class="form-line">
+                  <span>When?</span><br>
+                  <img id="when-icon" src='https://static.wixstatic.com/media/de271e_99334077334348128459dcffdcf5262f~mv2.png/v1/fill/w_512,h_512,al_c/de271e_99334077334348128459dcffdcf5262f~mv2.png'>
+                  <div hidden id="when-column-bounds">
+                    <div id="when-column-left">
+                      <!-- <label class="form-line"> -->
+                        <span>Date:</span>
+                        <input type="date" id='whenDatePending' size="50">
+                        <span class="bar">
+                      </label>
+                    </div>
+                    <div id="when-column-right">
+                        <span>Time:</span>
+                        <input type="time" id='whenTimePending' size="50">
+                        <!-- <i id='new-chat-input-when-time-icon' class="medium material-icons">query_builder</i> -->
+                        <span class="bar">
+                      </label>
+                    </div>
+                  </div>
+                </label>
+                </div>
               </div>
               <button id="submit" disabled type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect submit2">
                 Send
