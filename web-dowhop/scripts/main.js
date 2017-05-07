@@ -201,11 +201,10 @@ FriendlyChat.prototype.sendApproval = function(e) {
     status: 'approved'
     });
   } else if (this.radioDeny.checked) {
-    choice = this.radioDeny.value
     this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
     status: 'denied'
-    });
-    console.log(choice)
+  }); //<-- Debugging.
+    // this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').remove();
   };
   // console.log("you have sent your approval! >>" + choice.value);
   // this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
@@ -266,28 +265,35 @@ FriendlyChat.prototype.loadChats = function() {
         myApprovalForm.setAttribute("hidden", "true");
         myRescindingForm.setAttribute("hidden", "true");
         pendingDiv.setAttribute("hidden", "true");
-
         myChatData.innerText = snap.val().title;
 
         // We are checking whether the current user is the owner of the thread.
-        if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator) {
-          pendingNotification = "Someone else has requested this time.\nDo you want to approve it?"
+        if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator && snap.val().pending.status == true) {
+
+          pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
           myApprovalForm.removeAttribute('hidden');
-        } else if (snap.val().pending && firebase.auth().currentUser.uid == snap.val().pending.requester) {
+          pendingDiv.removeAttribute('hidden');
+          pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenTimePending;
+
+        } else if (snap.val().pending !=null && firebase.auth().currentUser.uid == snap.val().pending.requester && snap.val().pending.status == true) {
+
           pendingNotification = "You have requested this time!\nDo you want to change it?";
-          myRescindingForm.removeAttribute('hidden')
+          pendingDiv.removeAttribute('hidden');
+          myRescindingForm.removeAttribute('hidden');
+          pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenDatePending;
         }
 
-        // Preparing the time-pending notification:
-        if (snap.val().pending != null) {
-           whenDatePending = snap.val().pending.whenDatePending;
-           whenTimePending = snap.val().pending.whenTimePending;
-           pendingDiv.removeAttribute('hidden');
-           pendingDiv.innerHTML = pendingNotification + "\nRequested: " + whenDatePending + " at " + whenTimePending;
 
-        } else { var whenDatePending = "TBD"; var whenTimePending = "TBD" };
-
-        // myChatDataNotification.innerHTML = snap.val().pending.whenDatePending;
+        // // Preparing the time-pending notification:
+        // if (snap.val().pending != null) {
+        //    whenDatePending = snap.val().pending.whenDatePending;
+        //    whenTimePending = snap.val().pending.whenTimePending;
+        //    pendingDiv.removeAttribute('hidden');
+        //    pendingDiv.innerHTML = pendingNotification + "\nRequested: " + whenDatePending + " at " + whenTimePending;
+        //
+        // } else {
+        //   var whenDatePending = "TBD"; var whenTimePending = "TBD"
+        // };
 
         myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
                 "<p>Click  to load messages.</p>" +
