@@ -110,6 +110,8 @@ function FriendlyChat() {
   this.approvalForm = document.getElementById('approve-pending-form');
   this.rescindingForm = document.getElementById('rescind-pending-form');
   this.pendingDiv = document.getElementById('pending-div');
+  this.submitApproval = document.getElementById('submit-approval-button');
+  this.submitRescind = document.getElementById('submit-rescind-button');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -146,6 +148,11 @@ function FriendlyChat() {
   this.messageInput.addEventListener('keyup', buttonTogglingHandler);
   this.messageInput.addEventListener('change', buttonTogglingHandler);
 
+
+  // Events for time-change-approval buttons:
+  this.submitApproval.addEventListener('click', this.sendApproval.bind(this));
+  this.submitRescind.addEventListener('click', this.sendRescind.bind(this));
+
   // Events for image upload:
   this.submitImageButton.addEventListener('click', function(e) {
     e.preventDefault();
@@ -163,6 +170,27 @@ FriendlyChat.prototype.initFirebase = function() {
   // Initiates Firebase auth and listen to auth state changes.
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
 };
+
+// new
+FriendlyChat.prototype.sendApproval = function(e) {
+  e.preventDefault();
+  console.log("you have sent your approval!");
+  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
+  var myRef = this.database.ref().child('chats/');
+
+  // Mke sure this chat and message get sent to two appropriate places:
+
+  // Nesting the message content under chat-id node headings:
+  var messagesChatsRef = this.messagesRef; // <-- Refactor?
+  var currentUser = this.auth.currentUser;
+}
+
+FriendlyChat.prototype.sendRescind = function(e) {
+  e.preventDefault();
+  console.log("You have rescinded");
+  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
+  this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').remove();
+}
 
 // Add dynamic 'When' form:
 FriendlyChat.prototype.showDateTimeInputs = function () {
