@@ -108,6 +108,7 @@ function FriendlyChat() {
   this.messageFormWhenDatePending = document.getElementById('whenDatePending');
   this.messageFormWhenTimePending = document.getElementById('whenTimePending');
   this.approvalForm = document.getElementById('approve-pending-form');
+  this.rescindingForm = document.getElementById('rescind-pending-form');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -182,6 +183,7 @@ FriendlyChat.prototype.loadChats = function() {
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
   var myApprovalForm = this.approvalForm;
+  var myRescindingForm = this.rescindingForm;
 
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
@@ -194,8 +196,12 @@ FriendlyChat.prototype.loadChats = function() {
       var pendingNotification;
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
-        myReset.setAttribute("hidden", "true"); // <-- Reset error messages.
-        myViewMessageList.innerText = ''; // <-- Reset the form.
+
+        // Resetting error messages and forms:
+        myReset.setAttribute("hidden", "true");
+        myViewMessageList.innerText = '';
+        myApprovalForm.setAttribute("hidden", "true");
+        myRescindingForm.setAttribute("hidden", "true");
         myChatData.innerText = snap.val().title;
 
         // We are checking whether the current user is the owner of the thread.
@@ -205,6 +211,7 @@ FriendlyChat.prototype.loadChats = function() {
           myApprovalForm.removeAttribute('hidden');
         } else if (snap.val().pending && firebase.auth().currentUser.uid == snap.val().pending.requester) {
           pendingNotification = "You have requested this time!\nDo you want to change it?";
+          myRescindingForm.removeAttribute('hidden')
         }
 
         if (snap.val().pending != null) {
