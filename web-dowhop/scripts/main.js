@@ -246,7 +246,30 @@ FriendlyChat.prototype.loadChats = function() {
   var myApprovalForm = this.approvalForm;
   var myRescindingForm = this.rescindingForm;
   var pendingDiv = this.pendingDiv;
+  let showPendings = this.showPendings;
+  let myReset = this.newChatPopup;
+  var pendingNotification;
 
+  var checkForPendings = function(data) {
+    console.log("something was changed!");
+    console.log(data.val().pending.status)
+    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status == true) {
+
+      pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+      myApprovalForm.removeAttribute('hidden');
+      pendingDiv.removeAttribute('hidden');
+      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+
+    } else if (data.val().pending !=null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status == true) {
+
+      pendingNotification = "You have requested this time!\nDo you want to change it?";
+      pendingDiv.removeAttribute('hidden');
+      myRescindingForm.removeAttribute('hidden');
+      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+    }
+  };
+
+  myRef.on('child_changed', checkForPendings);
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -255,7 +278,8 @@ FriendlyChat.prototype.loadChats = function() {
       button.setAttribute('id', snap.key);
       button.innerHTML = snap.val().title;
       let myReset = this.newChatPopup;
-      var pendingNotification;
+      // var pendingNotification;
+
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
 
@@ -266,34 +290,22 @@ FriendlyChat.prototype.loadChats = function() {
         myRescindingForm.setAttribute("hidden", "true");
         pendingDiv.setAttribute("hidden", "true");
         myChatData.innerText = snap.val().title;
-
-        // We are checking whether the current user is the owner of the thread.
-        if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator && snap.val().pending.status == true) {
-
-          pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
-          myApprovalForm.removeAttribute('hidden');
-          pendingDiv.removeAttribute('hidden');
-          pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenTimePending;
-
-        } else if (snap.val().pending !=null && firebase.auth().currentUser.uid == snap.val().pending.requester && snap.val().pending.status == true) {
-
-          pendingNotification = "You have requested this time!\nDo you want to change it?";
-          pendingDiv.removeAttribute('hidden');
-          myRescindingForm.removeAttribute('hidden');
-          pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenDatePending;
-        }
-
-
-        // // Preparing the time-pending notification:
-        // if (snap.val().pending != null) {
-        //    whenDatePending = snap.val().pending.whenDatePending;
-        //    whenTimePending = snap.val().pending.whenTimePending;
-        //    pendingDiv.removeAttribute('hidden');
-        //    pendingDiv.innerHTML = pendingNotification + "\nRequested: " + whenDatePending + " at " + whenTimePending;
         //
-        // } else {
-        //   var whenDatePending = "TBD"; var whenTimePending = "TBD"
-        // };
+        // // We are checking whether the current user is the owner of the thread.
+        // if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator && snap.val().pending.status == true) {
+        //
+        //   pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+        //   myApprovalForm.removeAttribute('hidden');
+        //   pendingDiv.removeAttribute('hidden');
+        //   pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenTimePending;
+        //
+        // } else if (snap.val().pending !=null && firebase.auth().currentUser.uid == snap.val().pending.requester && snap.val().pending.status == true) {
+        //
+        //   pendingNotification = "You have requested this time!\nDo you want to change it?";
+        //   pendingDiv.removeAttribute('hidden');
+        //   myRescindingForm.removeAttribute('hidden');
+        //   pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenDatePending;
+        // }
 
         myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
                 "<p>Click  to load messages.</p>" +
@@ -305,13 +317,6 @@ FriendlyChat.prototype.loadChats = function() {
                 "<p>" + snap.val().who + "</p>" +
                 "<h5>Where?</h5>" +
                 "<p>" + snap.val().where + "</p>"
-                // "<div class='pending-notification'>" + pendingNotification + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
-                // "<p class='pending-notification'>" +
-                // whenTimePending + "</p>" + "</div>"
-
-        // var container = document.createElement('div');
-        // container.innerHTML = "<form><input type='radio' name='approval' value='approve'>Approve<input type='radio' name='approval' value='deny'>Deny<button type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send</button></form>"
-        // myChatData.appendChild(container);
       });
       myView.appendChild(button);
   });
