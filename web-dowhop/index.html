@@ -98,8 +98,8 @@
           </div>
         </div>
         <form hidden id='approve-pending-form' class='approval-form'>
-          <input type='radio' name='approval' value='approve'>Approve
-          <input type='radio' name='approval' value='deny'>Deny
+          <input id="radioApprove" type='radio' name='approval' value='approve'>Approve
+          <input id="radioDeny" type='radio' name='approval' value='deny'>Deny
           <button id='submit-approval-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send
           </button>
         </form>
@@ -187,7 +187,7 @@
                 <label class="form-line">
                 <span>When?</span><br>
                 <img id="when-icon" src='https://static.wixstatic.com/media/de271e_99334077334348128459dcffdcf5262f~mv2.png/v1/fill/w_512,h_512,al_c/de271e_99334077334348128459dcffdcf5262f~mv2.png'>
-                <div hidden id="when-column-bounds">
+                <div id="when-column-bounds">
                   <div id="when-column-left">
                     <!-- <label class="form-line"> -->
                       <span>Date:</span>

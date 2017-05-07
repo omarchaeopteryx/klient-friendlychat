@@ -107,6 +107,8 @@ function FriendlyChat() {
   this.signInSnackbar = document.getElementById('must-signin-snackbar');
   this.messageFormWhenDatePending = document.getElementById('whenDatePending');
   this.messageFormWhenTimePending = document.getElementById('whenTimePending');
+  this.radioApprove = document.getElementById("radioApprove");
+  this.radioDeny = document.getElementById("radioDeny");
   this.approvalForm = document.getElementById('approve-pending-form');
   this.rescindingForm = document.getElementById('rescind-pending-form');
   this.pendingDiv = document.getElementById('pending-div');
@@ -174,15 +176,46 @@ FriendlyChat.prototype.initFirebase = function() {
 // new
 FriendlyChat.prototype.sendApproval = function(e) {
   e.preventDefault();
-  console.log("you have sent your approval!");
-  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
-  var myRef = this.database.ref().child('chats/');
+  var choice, newDate, newTime
+  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id
+  var myRef = this.database.ref().child('chats/' + this.chatItemDataSpecific);
 
-  // Mke sure this chat and message get sent to two appropriate places:
+  var myRefPending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending');
+  // var myRefTimePending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/whenTimePending');
+  myRefPending.once('value', function(snap) {
+    console.log("your suggested date is:\n")
+    console.log(snap.val().whenDatePending)
+    console.log("your suggested time is:\n")
+    console.log(snap.val().whenTimePending);
+    newDate = snap.val().whenDatePending;
+    newTime = snap.val().whenTimePending;
+  });
 
-  // Nesting the message content under chat-id node headings:
-  var messagesChatsRef = this.messagesRef; // <-- Refactor?
-  var currentUser = this.auth.currentUser;
+  if (this.radioApprove.checked) {
+    // choice = this.radioApprove.value;
+    myRef.update({
+      whenDate: newDate,
+      whenTime: newTime
+    });
+    this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
+    status: 'approved'
+    });
+  } else if (this.radioDeny.checked) {
+    choice = this.radioDeny.value
+    this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
+    status: 'denied'
+    });
+    console.log(choice)
+  };
+  // console.log("you have sent your approval! >>" + choice.value);
+  // this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
+  // var myRef = this.database.ref().child('chats/');
+  //
+  // // Mke sure this chat and message get sent to two appropriate places:
+  //
+  // // Nesting the message content under chat-id node headings:
+  // var messagesChatsRef = this.messagesRef; // <-- Refactor?
+  // var currentUser = this.auth.currentUser;
 }
 
 FriendlyChat.prototype.sendRescind = function(e) {
@@ -237,7 +270,6 @@ FriendlyChat.prototype.loadChats = function() {
         myChatData.innerText = snap.val().title;
 
         // We are checking whether the current user is the owner of the thread.
-        // let myChatDataNotification = FriendlyChat.APPROVAL_TEMPLATE; // <-- Check
         if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator) {
           pendingNotification = "Someone else has requested this time.\nDo you want to approve it?"
           myApprovalForm.removeAttribute('hidden');
@@ -477,7 +509,6 @@ FriendlyChat.prototype.onAuthStateChanged = function(user) {
     this.signInButton.setAttribute('hidden', 'true');
 
     // We want to reset the page and load currently existing threads:
-    // this.removeChats();
     this.loadChats();
 
     // We want to save currently signed-in user.
