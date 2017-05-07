@@ -107,6 +107,7 @@ function FriendlyChat() {
   this.signInSnackbar = document.getElementById('must-signin-snackbar');
   this.messageFormWhenDatePending = document.getElementById('whenDatePending');
   this.messageFormWhenTimePending = document.getElementById('whenTimePending');
+  this.approvalForm = document.getElementById('approve-pending-form');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -180,6 +181,7 @@ FriendlyChat.prototype.loadChats = function() {
   var me = this.auth.currentUser;
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
+  var myApprovalForm = this.approvalForm;
 
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
@@ -199,8 +201,11 @@ FriendlyChat.prototype.loadChats = function() {
         // We are checking whether the current user is the owner of the thread.
         // let myChatDataNotification = FriendlyChat.APPROVAL_TEMPLATE; // <-- Check
         if (firebase.auth().currentUser.uid == snap.val().creator) {
-          pendingNotification = "You made this!";
-        } else { pendingNotification = "Someone else made this!"}
+          pendingNotification = "Someone else has requested this time.\nDo you want to approve it?"
+          myApprovalForm.removeAttribute('hidden');
+        } else if (snap.val().pending && firebase.auth().currentUser.uid == snap.val().pending.requester) {
+          pendingNotification = "You have requested this time!\nDo you want to change it?";
+        }
 
         if (snap.val().pending != null) {
            whenDatePending = snap.val().pending.whenDatePending;
@@ -218,12 +223,14 @@ FriendlyChat.prototype.loadChats = function() {
                 "<h5>Who?</h5>" +
                 "<p>" + snap.val().who + "</p>" +
                 "<h5>Where?</h5>" +
-                "<p>" + snap.val().where + "</p>" + pendingNotification +
-                "<div class='pending-notification'" + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
+                "<p>" + snap.val().where + "</p>" +
+                "<div class='pending-notification'>" + pendingNotification + "<p class='pending-notification'>" + whenDatePending+ "</p>" +
                 "<p class='pending-notification'>" +
                 whenTimePending + "</p>" + "</div>"
 
-        // myChatData.appendChild(div);
+        // var container = document.createElement('div');
+        // container.innerHTML = "<form><input type='radio' name='approval' value='approve'>Approve<input type='radio' name='approval' value='deny'>Deny<button type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send</button></form>"
+        // myChatData.appendChild(container);
       });
       myView.appendChild(button);
   });
@@ -256,11 +263,10 @@ FriendlyChat.prototype.saveMessage = function(e) {
 
   // Nesting the message content under chat-id node headings:
   var messagesChatsRef = this.messagesRef; // <-- Refactor?
+  var currentUser = this.auth.currentUser;
+  // Check that the user entered a time change request:
 
-  // Check that the user entered a message and is signed in:
-  if (this.messageInput.value && this.checkSignedInWithMessage()) {
-    var currentUser = this.auth.currentUser;
-
+  if (this.messageFormWhenDatePending.value && this.messageFormWhenTimePending.value) {
     // Send the inputted date/time suggestion to the event it's associated with:
     var chatsRef = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/');
     chatsRef.update({
@@ -269,6 +275,9 @@ FriendlyChat.prototype.saveMessage = function(e) {
       whenTimePending: this.messageFormWhenTimePending.value,
       requester: currentUser.uid
     });
+  }
+  // Check that the user entered a message and is signed in:
+  if (this.messageInput.value && this.checkSignedInWithMessage()) {
 
     // Push new message to Firebase:
     messagesChatsRef.push({
