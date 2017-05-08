@@ -412,7 +412,6 @@ FriendlyChat.prototype.saveChat = function(e) {
   } else {
     this.newChatPopup.removeAttribute("hidden");
     this.newChatPopup.innerHTML = "Please enter all event information.";
-    console.log("Error"); // <--OM
   }
 }
 
@@ -486,7 +485,6 @@ FriendlyChat.prototype.saveUser = function() {
 
 // Signs-in Friendly Chat.
 FriendlyChat.prototype.signIn = function() {
-  // Added: Sign in Firebase with credential from the Google user.
   // Sign in Firebase using popup auth and Google as the identity provider.
   var provider = new firebase.auth.GoogleAuthProvider();
   this.auth.signInWithPopup(provider);
@@ -495,6 +493,9 @@ FriendlyChat.prototype.signIn = function() {
 // Signs-out of Friendly Chat and resets views:
 FriendlyChat.prototype.signOut = function() {
   this.removeChats();
+  this.pendingDiv.setAttribute("hidden", "true");
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
   this.auth.signOut();
 };
 
