@@ -272,9 +272,22 @@ FriendlyChat.prototype.loadChats = function() {
       myApprovalForm.setAttribute('hidden', 'true');
       myRescindingForm.setAttribute('hidden', 'true');
     }
+
+    // Updating the views for new database information:
+    myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
+            "<p>Click  to load messages.</p>" +
+            "<h5>What?</h5>" +
+            "<p>" + (data.val().what || 'TBD') + "</p>" +
+            "<h5>When?</h5>" +
+            "<p>" + data.val().whenDate + ' at ' + data.val().whenTime + "</p>" +
+            "<h5>Who?</h5>" +
+            "<p>" + data.val().who + "</p>" +
+            "<h5>Where?</h5>" +
+            "<p>" + data.val().where + "</p>"
   };
 
   myRef.on('child_changed', checkForPendings);
+
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -283,7 +296,6 @@ FriendlyChat.prototype.loadChats = function() {
       button.setAttribute('id', snap.key);
       button.innerHTML = snap.val().title;
       let myReset = this.newChatPopup;
-      // var pendingNotification;
 
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
