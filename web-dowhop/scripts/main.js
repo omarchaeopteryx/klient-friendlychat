@@ -253,7 +253,7 @@ FriendlyChat.prototype.loadChats = function() {
   var checkForPendings = function(data) {
 
     console.log("something was changed!");
-  
+
     if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status == true) {
 
       pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
@@ -377,8 +377,10 @@ FriendlyChat.prototype.saveMessage = function(e) {
       text: this.messageInput.value,
       photoUrl: currentUser.photoURL || 'https://static.wixstatic.com/media/de271e_daded027ba1f4feab7b1c26683bc84da~mv2.png/v1/fill/w_512,h_512,al_c/de271e_daded027ba1f4feab7b1c26683bc84da~mv2.png' // <- Customized.
     }).then(function() {
-      // Clear message text field and SEND button state:
+      // Clear message text field, date-time selection, and SEND button state: // <-- DEVELOPER: Return to this.
       FriendlyChat.resetMaterialTextfield(this.messageInput);
+      this.messageFormWhenDatePending[0].value = null; // <-- FIX
+      this.messageFormWhenTimePending[0].value = null; // <-- FIX
       this.toggleButton();
     }.bind(this)).catch(function(error) {
       console.error('Error writing new message to Firebase Database', error);
