@@ -250,17 +250,19 @@ FriendlyChat.prototype.loadChats = function() {
   var pendingDiv = this.pendingDiv;
   let showPendings = this.showPendings;
   let myReset = this.newChatPopup;
-  var pendingNotification;
 
   var checkForPendings = function(data) {
 
-    // myApprovalForm.setAttribute("hidden", "true");
-    // myRescindingForm.setAttribute("hidden", "true");
-    // pendingDiv.setAttribute("hidden", "true");
+    // myApprovalForm.setAttribute("hidden", "false");
+    // myRescindingForm.setAttribute("hidden", "false");
+    // pendingDiv.setAttribute("hidden", "false");
+
+    var pendingNotification = '';
 
     console.log("something was changed!");
 
-    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status == true) {
+    // Case where visiting user is the creator of the event (and has authority to allow time change):
+    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status === true) {
 
       pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
       pendingDiv.removeAttribute('hidden');
@@ -268,7 +270,8 @@ FriendlyChat.prototype.loadChats = function() {
       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
       myRescindingForm.setAttribute('hidden', 'true');
 
-    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status == true) {
+    // Case where visiting user is the requester of the event time change:
+    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status === true) {
 
       pendingNotification = "You have requested this time!\nDo you want to change it?";
       pendingDiv.removeAttribute('hidden');
@@ -276,11 +279,12 @@ FriendlyChat.prototype.loadChats = function() {
       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
       myApprovalForm.setAttribute('hidden', 'true');
 
+    // All other cases:
     } else {
       pendingDiv.setAttribute('hidden', 'true');
       pendingDiv.innerHTML = '';
-      myApprovalForm.setAttribute('hidden', 'true');
-      myRescindingForm.setAttribute('hidden', 'true');
+      // myApprovalForm.setAttribute('hidden', 'true');
+      // myRescindingForm.setAttribute('hidden', 'true');
     }
     // Updating the views for new database information:
     myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
@@ -311,7 +315,6 @@ FriendlyChat.prototype.loadChats = function() {
         // Resetting error messages and forms:
         myReset.setAttribute("hidden", "true");
         myViewMessageList.innerText = '';
-
         // myApprovalForm.setAttribute("hidden", "true");
         // myRescindingForm.setAttribute("hidden", "true");
         // pendingDiv.setAttribute("hidden", "true");
