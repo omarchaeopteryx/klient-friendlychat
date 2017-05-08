@@ -105,6 +105,15 @@ function FriendlyChat() {
   this.signInButton = document.getElementById('sign-in');
   this.signOutButton = document.getElementById('sign-out');
   this.signInSnackbar = document.getElementById('must-signin-snackbar');
+  this.messageFormWhenDatePending = document.getElementById('whenDatePending');
+  this.messageFormWhenTimePending = document.getElementById('whenTimePending');
+  this.radioApprove = document.getElementById("radioApprove");
+  this.radioDeny = document.getElementById("radioDeny");
+  this.approvalForm = document.getElementById('approve-pending-form');
+  this.rescindingForm = document.getElementById('rescind-pending-form');
+  this.pendingDiv = document.getElementById('pending-div');
+  this.submitApproval = document.getElementById('submit-approval-button');
+  this.submitRescind = document.getElementById('submit-rescind-button');
 
   // DOM elements for the new chatroom form
   this.newChatForm = document.getElementById('new-chat-form')
@@ -141,6 +150,11 @@ function FriendlyChat() {
   this.messageInput.addEventListener('keyup', buttonTogglingHandler);
   this.messageInput.addEventListener('change', buttonTogglingHandler);
 
+
+  // Events for time-change-approval buttons:
+  this.submitApproval.addEventListener('click', this.sendApproval.bind(this));
+  this.submitRescind.addEventListener('click', this.sendRescind.bind(this));
+
   // Events for image upload:
   this.submitImageButton.addEventListener('click', function(e) {
     e.preventDefault();
@@ -158,6 +172,59 @@ FriendlyChat.prototype.initFirebase = function() {
   // Initiates Firebase auth and listen to auth state changes.
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
 };
+
+// new
+FriendlyChat.prototype.sendApproval = function(e) {
+  e.preventDefault();
+  var choice, newDate, newTime
+  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id
+  var myRef = this.database.ref().child('chats/' + this.chatItemDataSpecific);
+
+  var myRefPending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending');
+  // var myRefTimePending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/whenTimePending');
+  myRefPending.once('value', function(snap) {
+    console.log("your suggested date is:\n")
+    console.log(snap.val().whenDatePending)
+    console.log("your suggested time is:\n")
+    console.log(snap.val().whenTimePending);
+    newDate = snap.val().whenDatePending;
+    newTime = snap.val().whenTimePending;
+  });
+
+  if (this.radioApprove.checked) {
+    myRef.update({
+      whenDate: newDate,
+      whenTime: newTime
+    });
+    this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
+    status: 'approved'
+    });
+  } else if (this.radioDeny.checked) {
+    this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
+    status: 'denied'
+  });
+  };
+
+  // Add UI reset information here:
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
+  this.pendingDiv.innerHTML = '';
+  this.pendingDiv.setAttribute("hidden", "true");
+}
+
+FriendlyChat.prototype.sendRescind = function(e) {
+  e.preventDefault();
+  console.log("You have rescinded");
+  this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
+  this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').remove();
+
+  // Add UI reset information here:
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
+  this.pendingDiv.innerHTML = '';
+  this.pendingDiv.setAttribute("hidden", "true");
+
+}
 
 // Add dynamic 'When' form:
 FriendlyChat.prototype.showDateTimeInputs = function () {
@@ -178,7 +245,62 @@ FriendlyChat.prototype.loadChats = function() {
   var me = this.auth.currentUser;
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
+  var myApprovalForm = this.approvalForm;
+  var myRescindingForm = this.rescindingForm;
+  var pendingDiv = this.pendingDiv;
+  let showPendings = this.showPendings;
+  let myReset = this.newChatPopup;
 
+  var checkForPendings = function(data) {
+
+    // myApprovalForm.setAttribute("hidden", "false");
+    // myRescindingForm.setAttribute("hidden", "false");
+    // pendingDiv.setAttribute("hidden", "false");
+
+    var pendingNotification = '';
+
+    console.log("something was changed!");
+
+    // Case where visiting user is the creator of the event (and has authority to allow time change):
+    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status === true) {
+
+      pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+      pendingDiv.removeAttribute('hidden');
+      myApprovalForm.removeAttribute('hidden');
+      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+      myRescindingForm.setAttribute('hidden', 'true');
+
+    // Case where visiting user is the requester of the event time change:
+    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status === true) {
+
+      pendingNotification = "You have requested this time!\nDo you want to change it?";
+      pendingDiv.removeAttribute('hidden');
+      myRescindingForm.removeAttribute('hidden');
+      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+      myApprovalForm.setAttribute('hidden', 'true');
+
+    // All other cases:
+    } else {
+      pendingDiv.setAttribute('hidden', 'true');
+      pendingDiv.innerHTML = '';
+      // myApprovalForm.setAttribute('hidden', 'true');
+      // myRescindingForm.setAttribute('hidden', 'true');
+    }
+    // Updating the views for new database information:
+    myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
+            "<p>Click  to load messages.</p>" +
+            "<h5>What?</h5>" +
+            "<p>" + (data.val().what || 'TBD') + "</p>" +
+            "<h5>When?</h5>" +
+            "<p>" + data.val().whenDate + ' at ' + data.val().whenTime + "</p>" +
+            "<h5>Who?</h5>" +
+            "<p>" + data.val().who + "</p>" +
+            "<h5>Where?</h5>" +
+            "<p>" + data.val().where + "</p>"
+  };
+
+  myRef.on('child_changed', checkForPendings);
+  myRef.on('child_added', checkForPendings);
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -187,21 +309,31 @@ FriendlyChat.prototype.loadChats = function() {
       button.setAttribute('id', snap.key);
       button.innerHTML = snap.val().title;
       let myReset = this.newChatPopup;
+
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
-        myReset.setAttribute("hidden", "true"); // <-- Reset error messages.
-        myViewMessageList.innerText = ''; // <-- Reset the form.
+        // Resetting error messages and forms:
+        myReset.setAttribute("hidden", "true");
+        myViewMessageList.innerText = '';
+        // myApprovalForm.setAttribute("hidden", "true");
+        // myRescindingForm.setAttribute("hidden", "true");
+        // pendingDiv.setAttribute("hidden", "true");
+
         myChatData.innerText = snap.val().title;
-        myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
-                "<p>Click  to load messages.</p>" +
-                "<h5>What?</h5>" +
-                "<p>" + (snap.val().what || 'TBD') + "</p>" +
-                "<h5>When?</h5>" +
-                "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
-                "<h5>Who?</h5>" +
-                "<p>" + snap.val().who + "</p>" +
-                "<h5>Where?</h5>" +
-                "<p>" + snap.val().where + "</p>"
+
+        // myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
+        //         "<p>Click  to load messages.</p>" +
+        //         "<h5>What?</h5>" +
+        //         "<p>" + (snap.val().what || 'TBD') + "</p>" +
+        //         "<h5>When?</h5>" +
+        //         "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
+        //         "<h5>Who?</h5>" +
+        //         "<p>" + snap.val().who + "</p>" +
+        //         "<h5>Where?</h5>" +
+        //         "<p>" + snap.val().where + "</p>"
+
+        // Checking for pending messages
+        checkForPendings(snap);
       });
       myView.appendChild(button);
   });
@@ -234,12 +366,26 @@ FriendlyChat.prototype.saveMessage = function(e) {
 
   // Nesting the message content under chat-id node headings:
   var messagesChatsRef = this.messagesRef; // <-- Refactor?
+  var currentUser = this.auth.currentUser;
+  var whenDatePending = this.whenDatePending;
+  var whenTimePending = this.whenTimePending;
 
+  // Check that the user entered a time change request:
+
+  if (this.messageFormWhenDatePending.value && this.messageFormWhenTimePending.value) {
+    // Send the inputted date/time suggestion to the event it's associated with:
+    var chatsRef = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/');
+    chatsRef.update({
+      status: true,
+      whenDatePending: this.messageFormWhenDatePending.value,
+      whenTimePending: this.messageFormWhenTimePending.value,
+      requester: currentUser.uid
+    }).then(this.resetDateTime) // <-- Reset the field.
+  }
   // Check that the user entered a message and is signed in:
   if (this.messageInput.value && this.checkSignedInWithMessage()) {
 
     // Push new message to Firebase:
-    var currentUser = this.auth.currentUser;
     messagesChatsRef.push({
       chatId: this.chatItemDataSpecific,
       name: currentUser.displayName,
@@ -254,6 +400,11 @@ FriendlyChat.prototype.saveMessage = function(e) {
     });
   }
 };
+
+FriendlyChat.prototype.resetDateTime = function() {
+  document.getElementById("whenDatePending").value = null;
+  document.getElementById("whenTimePending").value = null;
+}
 
 // Button to save your chat thread to the database:
 FriendlyChat.prototype.saveChat = function(e) {
@@ -288,7 +439,6 @@ FriendlyChat.prototype.saveChat = function(e) {
   } else {
     this.newChatPopup.removeAttribute("hidden");
     this.newChatPopup.innerHTML = "Please enter all event information.";
-    console.log("Error"); // <--OM
   }
 }
 
@@ -362,7 +512,6 @@ FriendlyChat.prototype.saveUser = function() {
 
 // Signs-in Friendly Chat.
 FriendlyChat.prototype.signIn = function() {
-  // Added: Sign in Firebase with credential from the Google user.
   // Sign in Firebase using popup auth and Google as the identity provider.
   var provider = new firebase.auth.GoogleAuthProvider();
   this.auth.signInWithPopup(provider);
@@ -371,6 +520,9 @@ FriendlyChat.prototype.signIn = function() {
 // Signs-out of Friendly Chat and resets views:
 FriendlyChat.prototype.signOut = function() {
   this.removeChats();
+  this.pendingDiv.setAttribute("hidden", "true");
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
   this.auth.signOut();
 };
 
@@ -394,7 +546,6 @@ FriendlyChat.prototype.onAuthStateChanged = function(user) {
     this.signInButton.setAttribute('hidden', 'true');
 
     // We want to reset the page and load currently existing threads:
-    // this.removeChats();
     this.loadChats();
 
     // We want to save currently signed-in user.
@@ -477,6 +628,10 @@ FriendlyChat.CHAT_TEMPLATE =
 
 // A loading image URL.
 FriendlyChat.LOADING_IMAGE_URL = 'https://www.google.com/images/spin-32.gif';
+
+// Tempalte for approval-denial of time-change form:
+FriendlyChat.APPROVAL_TEMPLATE =
+  '<div class="pending-style">' + '<div>' + '<button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect dowhop-button">' + '</button>' + '</div>' + '</div>';
 
 // Displays a Message in the UI.
 FriendlyChat.prototype.displayMessage = function(key, name, text, picUrl, imageUri) {
