@@ -251,8 +251,9 @@ FriendlyChat.prototype.loadChats = function() {
   var pendingNotification;
 
   var checkForPendings = function(data) {
+
     console.log("something was changed!");
-    console.log(data.val().pending.status)
+  
     if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status == true) {
 
       pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
@@ -266,6 +267,10 @@ FriendlyChat.prototype.loadChats = function() {
       pendingDiv.removeAttribute('hidden');
       myRescindingForm.removeAttribute('hidden');
       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+    } else {
+      pendingDiv.setAttribute('hidden', 'true');
+      myApprovalForm.setAttribute('hidden', 'true');
+      myRescindingForm.setAttribute('hidden', 'true');
     }
   };
 
