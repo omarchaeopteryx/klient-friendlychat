@@ -192,7 +192,6 @@ FriendlyChat.prototype.sendApproval = function(e) {
   });
 
   if (this.radioApprove.checked) {
-    // choice = this.radioApprove.value;
     myRef.update({
       whenDate: newDate,
       whenTime: newTime
@@ -203,18 +202,8 @@ FriendlyChat.prototype.sendApproval = function(e) {
   } else if (this.radioDeny.checked) {
     this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').update({
     status: 'denied'
-  }); //<-- Debugging.
-    // this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').remove();
+  });
   };
-  // console.log("you have sent your approval! >>" + choice.value);
-  // this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
-  // var myRef = this.database.ref().child('chats/');
-  //
-  // // Mke sure this chat and message get sent to two appropriate places:
-  //
-  // // Nesting the message content under chat-id node headings:
-  // var messagesChatsRef = this.messagesRef; // <-- Refactor?
-  // var currentUser = this.auth.currentUser;
 }
 
 FriendlyChat.prototype.sendRescind = function(e) {
@@ -307,22 +296,6 @@ FriendlyChat.prototype.loadChats = function() {
         myRescindingForm.setAttribute("hidden", "true");
         pendingDiv.setAttribute("hidden", "true");
         myChatData.innerText = snap.val().title;
-        //
-        // // We are checking whether the current user is the owner of the thread.
-        // if (snap.val().pending != null && firebase.auth().currentUser.uid == snap.val().creator && snap.val().pending.status == true) {
-        //
-        //   pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
-        //   myApprovalForm.removeAttribute('hidden');
-        //   pendingDiv.removeAttribute('hidden');
-        //   pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenTimePending;
-        //
-        // } else if (snap.val().pending !=null && firebase.auth().currentUser.uid == snap.val().pending.requester && snap.val().pending.status == true) {
-        //
-        //   pendingNotification = "You have requested this time!\nDo you want to change it?";
-        //   pendingDiv.removeAttribute('hidden');
-        //   myRescindingForm.removeAttribute('hidden');
-        //   pendingDiv.innerHTML = pendingNotification + "\nRequested: " + snap.val().pending.whenDatePending + " at " + snap.val().pending.whenDatePending;
-        // }
 
         myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
                 "<p>Click  to load messages.</p>" +
@@ -367,6 +340,9 @@ FriendlyChat.prototype.saveMessage = function(e) {
   // Nesting the message content under chat-id node headings:
   var messagesChatsRef = this.messagesRef; // <-- Refactor?
   var currentUser = this.auth.currentUser;
+  var whenDatePending = this.whenDatePending;
+  var whenTimePending = this.whenTimePending;
+
   // Check that the user entered a time change request:
 
   if (this.messageFormWhenDatePending.value && this.messageFormWhenTimePending.value) {
@@ -377,7 +353,7 @@ FriendlyChat.prototype.saveMessage = function(e) {
       whenDatePending: this.messageFormWhenDatePending.value,
       whenTimePending: this.messageFormWhenTimePending.value,
       requester: currentUser.uid
-    });
+    }).then(this.resetDateTime) // <-- Reset the field.
   }
   // Check that the user entered a message and is signed in:
   if (this.messageInput.value && this.checkSignedInWithMessage()) {
@@ -389,16 +365,19 @@ FriendlyChat.prototype.saveMessage = function(e) {
       text: this.messageInput.value,
       photoUrl: currentUser.photoURL || 'https://static.wixstatic.com/media/de271e_daded027ba1f4feab7b1c26683bc84da~mv2.png/v1/fill/w_512,h_512,al_c/de271e_daded027ba1f4feab7b1c26683bc84da~mv2.png' // <- Customized.
     }).then(function() {
-      // Clear message text field, date-time selection, and SEND button state: // <-- DEVELOPER: Return to this.
+      // Clear message text field and SEND button state:
       FriendlyChat.resetMaterialTextfield(this.messageInput);
-      this.messageFormWhenDatePending[0].value = null; // <-- FIX
-      this.messageFormWhenTimePending[0].value = null; // <-- FIX
       this.toggleButton();
     }.bind(this)).catch(function(error) {
       console.error('Error writing new message to Firebase Database', error);
     });
   }
 };
+
+FriendlyChat.prototype.resetDateTime = function() {
+  document.getElementById("whenDatePending").value = null;
+  document.getElementById("whenTimePending").value = null;
+}
 
 // Button to save your chat thread to the database:
 FriendlyChat.prototype.saveChat = function(e) {
