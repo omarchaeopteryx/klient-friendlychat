@@ -204,6 +204,12 @@ FriendlyChat.prototype.sendApproval = function(e) {
     status: 'denied'
   });
   };
+
+  // Add UI reset information here:
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
+  this.pendingDiv.innerHTML = '';
+  this.pendingDiv.setAttribute("hidden", "true");
 }
 
 FriendlyChat.prototype.sendRescind = function(e) {
@@ -211,6 +217,13 @@ FriendlyChat.prototype.sendRescind = function(e) {
   console.log("You have rescinded");
   this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id // <-- Refactor
   this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/').remove();
+
+  // Add UI reset information here:
+  this.approvalForm.setAttribute("hidden", "true");
+  this.rescindingForm.setAttribute("hidden", "true");
+  this.pendingDiv.innerHTML = '';
+  this.pendingDiv.setAttribute("hidden", "true");
+
 }
 
 // Add dynamic 'When' form:
@@ -241,27 +254,34 @@ FriendlyChat.prototype.loadChats = function() {
 
   var checkForPendings = function(data) {
 
+    // myApprovalForm.setAttribute("hidden", "true");
+    // myRescindingForm.setAttribute("hidden", "true");
+    // pendingDiv.setAttribute("hidden", "true");
+
     console.log("something was changed!");
 
     if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status == true) {
 
       pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
-      myApprovalForm.removeAttribute('hidden');
       pendingDiv.removeAttribute('hidden');
+      myApprovalForm.removeAttribute('hidden');
       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+      myRescindingForm.setAttribute('hidden', 'true');
 
-    } else if (data.val().pending !=null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status == true) {
+    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status == true) {
 
       pendingNotification = "You have requested this time!\nDo you want to change it?";
       pendingDiv.removeAttribute('hidden');
       myRescindingForm.removeAttribute('hidden');
       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+      myApprovalForm.setAttribute('hidden', 'true');
+
     } else {
       pendingDiv.setAttribute('hidden', 'true');
+      pendingDiv.innerHTML = '';
       myApprovalForm.setAttribute('hidden', 'true');
       myRescindingForm.setAttribute('hidden', 'true');
     }
-
     // Updating the views for new database information:
     myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
             "<p>Click  to load messages.</p>" +
@@ -276,7 +296,7 @@ FriendlyChat.prototype.loadChats = function() {
   };
 
   myRef.on('child_changed', checkForPendings);
-
+  myRef.on('child_added', checkForPendings);
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -288,25 +308,29 @@ FriendlyChat.prototype.loadChats = function() {
 
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
-
         // Resetting error messages and forms:
         myReset.setAttribute("hidden", "true");
         myViewMessageList.innerText = '';
-        myApprovalForm.setAttribute("hidden", "true");
-        myRescindingForm.setAttribute("hidden", "true");
-        pendingDiv.setAttribute("hidden", "true");
+
+        // myApprovalForm.setAttribute("hidden", "true");
+        // myRescindingForm.setAttribute("hidden", "true");
+        // pendingDiv.setAttribute("hidden", "true");
+
         myChatData.innerText = snap.val().title;
 
-        myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
-                "<p>Click  to load messages.</p>" +
-                "<h5>What?</h5>" +
-                "<p>" + (snap.val().what || 'TBD') + "</p>" +
-                "<h5>When?</h5>" +
-                "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
-                "<h5>Who?</h5>" +
-                "<p>" + snap.val().who + "</p>" +
-                "<h5>Where?</h5>" +
-                "<p>" + snap.val().where + "</p>"
+        // myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
+        //         "<p>Click  to load messages.</p>" +
+        //         "<h5>What?</h5>" +
+        //         "<p>" + (snap.val().what || 'TBD') + "</p>" +
+        //         "<h5>When?</h5>" +
+        //         "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
+        //         "<h5>Who?</h5>" +
+        //         "<p>" + snap.val().who + "</p>" +
+        //         "<h5>Where?</h5>" +
+        //         "<p>" + snap.val().where + "</p>"
+
+        // Checking for pending messages
+        checkForPendings(snap);
       });
       myView.appendChild(button);
   });
