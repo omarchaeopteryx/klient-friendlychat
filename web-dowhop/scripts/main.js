@@ -173,15 +173,13 @@ FriendlyChat.prototype.initFirebase = function() {
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
 };
 
-// new
 FriendlyChat.prototype.sendApproval = function(e) {
   e.preventDefault();
   var choice, newDate, newTime
   this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id
   var myRef = this.database.ref().child('chats/' + this.chatItemDataSpecific);
-
   var myRefPending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending');
-  // var myRefTimePending = this.database.ref().child('chats/' + this.chatItemDataSpecific + '/pending/whenTimePending');
+
   myRefPending.once('value', function(snap) {
     console.log("your suggested date is:\n")
     console.log(snap.val().whenDatePending)
@@ -238,6 +236,7 @@ FriendlyChat.prototype.removeChats = function() {
 }
 
 FriendlyChat.prototype.loadChats = function() {
+
   // First, make sure the view element is chosen:
   var myView = this.chatList;
   var myViewMessageList = this.messageList;
@@ -245,62 +244,75 @@ FriendlyChat.prototype.loadChats = function() {
   var me = this.auth.currentUser;
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
+  // Add parts for the notification-pending displays:
+  var pendingDiv = this.pendingDiv;
   var myApprovalForm = this.approvalForm;
   var myRescindingForm = this.rescindingForm;
-  var pendingDiv = this.pendingDiv;
-  let showPendings = this.showPendings;
-  let myReset = this.newChatPopup;
+  var myReset = this.newChatPopup;
 
-  var checkForPendings = function(data) {
+  var makeEventDisplay = function(item, snap) {
+    item.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
+            "<p>Click  to load messages.</p>" +
+            "<h5>What?</h5>" +
+            "<p>" + (snap.val().what || 'TBD') + "</p>" +
+            "<h5>When?</h5>" +
+            "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
+            "<h5>Who?</h5>" +
+            "<p>" + snap.val().who + "</p>" +
+            "<h5>Where?</h5>" +
+            "<p>" + snap.val().where + "</p>"
+  };
 
-    // myApprovalForm.setAttribute("hidden", "false");
-    // myRescindingForm.setAttribute("hidden", "false");
-    // pendingDiv.setAttribute("hidden", "false");
+  var checkForPendings = function(id, data) {
 
     var pendingNotification = '';
 
-    console.log("something was changed!");
+    console.log("something was changed regarding: " + id);
 
-    // Case where visiting user is the creator of the event (and has authority to allow time change):
-    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status === true) {
+    // Check if there are pending notifications:
+    if ((data.val().pending != null) && (data.val().pending.status != "approved") && (data.val().pending.status != "denied")) {
 
-      pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+      console.log("pending status true. showing pending div.");
+
       pendingDiv.removeAttribute('hidden');
-      myApprovalForm.removeAttribute('hidden');
-      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+
+      // This means visiting user is the creator of event:
+      if (firebase.auth().currentUser.uid == data.val().creator) {
+
+          console.log("visiting user is the creator. showing approval form, hiding rescind form.")
+
+          pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+          pendingDiv.innerText = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+
+          myApprovalForm.removeAttribute('hidden');
+          myRescindingForm.setAttribute('hidden', 'true');
+
+      // This means visiting user is a requestor of event change:
+    } else if (firebase.auth().currentUser.uid == data.val().pending.requester) {
+
+        console.log("visiting user requested a change. showing rescinding form, hiding approval form.")
+
+        pendingNotification = "You have requested this time!\nDo you want to change it?";
+        pendingDiv.innerText = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+
+        myRescindingForm.removeAttribute('hidden');
+        myApprovalForm.setAttribute('hidden', 'true');
+
+      }
+      // All other cases:
+    } else {
+
+      console.log("this means it has passed over logic tests.")
+      // pendingDiv.setAttribute('hidden', 'true');
+      pendingDiv.innerText = '';
+      myApprovalForm.setAttribute('hidden', 'true');
       myRescindingForm.setAttribute('hidden', 'true');
 
-    // Case where visiting user is the requester of the event time change:
-    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status === true) {
-
-      pendingNotification = "You have requested this time!\nDo you want to change it?";
-      pendingDiv.removeAttribute('hidden');
-      myRescindingForm.removeAttribute('hidden');
-      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
-      myApprovalForm.setAttribute('hidden', 'true');
-
-    // All other cases:
-    } else {
-      pendingDiv.setAttribute('hidden', 'true');
-      pendingDiv.innerHTML = '';
-      // myApprovalForm.setAttribute('hidden', 'true');
-      // myRescindingForm.setAttribute('hidden', 'true');
     }
-    // Updating the views for new database information:
-    myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
-            "<p>Click  to load messages.</p>" +
-            "<h5>What?</h5>" +
-            "<p>" + (data.val().what || 'TBD') + "</p>" +
-            "<h5>When?</h5>" +
-            "<p>" + data.val().whenDate + ' at ' + data.val().whenTime + "</p>" +
-            "<h5>Who?</h5>" +
-            "<p>" + data.val().who + "</p>" +
-            "<h5>Where?</h5>" +
-            "<p>" + data.val().where + "</p>"
   };
 
-  myRef.on('child_changed', checkForPendings);
-  myRef.on('child_added', checkForPendings);
+  // NOTE: Check the event-listener design to ensure this UI timing works:
+
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -312,30 +324,22 @@ FriendlyChat.prototype.loadChats = function() {
 
       // Setting the events for when chat-thread button is clicked.
       button.addEventListener('click', function(){
+
         // Resetting error messages and forms:
         myReset.setAttribute("hidden", "true");
         myViewMessageList.innerText = '';
-        // myApprovalForm.setAttribute("hidden", "true");
-        // myRescindingForm.setAttribute("hidden", "true");
-        // pendingDiv.setAttribute("hidden", "true");
 
         myChatData.innerText = snap.val().title;
 
-        // myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
-        //         "<p>Click  to load messages.</p>" +
-        //         "<h5>What?</h5>" +
-        //         "<p>" + (snap.val().what || 'TBD') + "</p>" +
-        //         "<h5>When?</h5>" +
-        //         "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
-        //         "<h5>Who?</h5>" +
-        //         "<p>" + snap.val().who + "</p>" +
-        //         "<h5>Where?</h5>" +
-        //         "<p>" + snap.val().where + "</p>"
-
-        // Checking for pending messages
-        checkForPendings(snap);
+        makeEventDisplay(myChatData, snap);
+        checkForPendings(snap.key, snap); // <-- Check
       });
       myView.appendChild(button);
+  });
+
+  myRef.on('child_changed', snap => { // <-- Check
+    makeEventDisplay(myChatData, snap),
+    checkForPendings(snap.key, snap);
   });
 };
 

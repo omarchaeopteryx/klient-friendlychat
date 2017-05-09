@@ -93,20 +93,21 @@
       <div id="show-chat-data-form" class="form-wrap">
         <div id="show-chat-data">Your DoWhop details will appear here!
         </div>
-        <div hidden id='pending-div' class='pending-notification'>
-          <div>
-          </div>
+        <!-- These are the hidden pending notifications -->
+        <div id='pending-div-container' class='pending-notification'>
+          <p id='pending-div'>
+          <form hidden id='approve-pending-form' class='approval-form'>
+            <input id="radioApprove" type='radio' name='approval' value='approve'>Approve
+            <input id="radioDeny" type='radio' name='approval' value='deny'>Deny
+            <button id='submit-approval-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send
+            </button>
+          </form>
+          <form hidden id='rescind-pending-form' class='approval-form'>
+            <button id='submit-rescind-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Rescind
+            </button>
+          </form>
         </div>
-        <form hidden id='approve-pending-form' class='approval-form'>
-          <input id="radioApprove" type='radio' name='approval' value='approve'>Approve
-          <input id="radioDeny" type='radio' name='approval' value='deny'>Deny
-          <button id='submit-approval-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Send
-          </button>
-        </form>
-        <form hidden id='rescind-pending-form' class='approval-form'>
-          <button id='submit-rescind-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Rescind
-          </button>
-        </form>
+        </div>
       </div>
 
       <div id="messages-card-container"  class="form-wrap">
