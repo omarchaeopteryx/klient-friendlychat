@@ -95,7 +95,7 @@
         </div>
         <!-- These are the hidden pending notifications -->
         <div id='pending-div-container' class='pending-notification'>
-          <p id='pending-div'>
+          <p id='pending-div'></p>
           <form hidden id='approve-pending-form' class='approval-form'>
             <input id="radioApprove" type='radio' name='approval' value='approve'>Approve
             <input id="radioDeny" type='radio' name='approval' value='deny'>Deny
@@ -106,7 +106,6 @@
             <button id='submit-rescind-button' type='submit' class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect'>Rescind
             </button>
           </form>
-        </div>
         </div>
       </div>
 
@@ -122,33 +121,35 @@
                   <input type="text" id="message">
                   <span class="bar">
                 </label>
-                <!-- Adding the time-change-request inputs here -->
-                <div id="when-icon-div">
-                  <label class="form-line">
-                  <span>When?</span><br>
-                  <img id="when-icon" src='https://static.wixstatic.com/media/de271e_99334077334348128459dcffdcf5262f~mv2.png/v1/fill/w_512,h_512,al_c/de271e_99334077334348128459dcffdcf5262f~mv2.png'>
-                  <div hidden id="when-column-bounds">
-                    <div id="when-column-left">
-                      <!-- <label class="form-line"> -->
-                        <span>Date:</span>
-                        <input type="date" id='whenDatePending' size="50">
-                        <span class="bar">
-                      </label>
-                    </div>
-                    <div id="when-column-right">
-                        <span>Time:</span>
-                        <input type="time" id='whenTimePending' size="50">
-                        <!-- <i id='new-chat-input-when-time-icon' class="medium material-icons">query_builder</i> -->
-                        <span class="bar">
-                      </label>
-                    </div>
-                  </div>
-                </label>
-                </div>
               </div>
+              <!-- Adding the time-change-request inputs here -->
+               <div id="when-icon-div">
+                 <label class="form-line">
+                 <span>When?</span><br>
+                 <img id="when-icon" src='https://static.wixstatic.com/media/de271e_99334077334348128459dcffdcf5262f~mv2.png/v1/fill/w_512,h_512,al_c/de271e_99334077334348128459dcffdcf5262f~mv2.png'>
+                 <div hidden id="when-column-bounds">
+                   <div id="when-column-left">
+                     <!-- <label class="form-line"> -->
+                       <span>Date:</span>
+                       <input type="date" id='whenDatePending' size="50">
+                       <span class="bar">
+                     </label>
+                   </div>
+                   <div id="when-column-right">
+                       <span>Time:</span>
+                       <input type="time" id='whenTimePending' size="50">
+                       <!-- <i id='new-chat-input-when-time-icon' class="medium material-icons">query_builder</i> -->
+                       <span class="bar">
+                     </label>
+                   </div>
+                 </div>
+               </label>
+               </div>
+
               <button id="submit" disabled type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect submit2">
                 Send
               </button>
+
             </form>
             <form id="image-form" action="#">
               <input id="mediaCapture" type="file" accept="image/*,capture=camera">
@@ -188,7 +189,7 @@
                 <label class="form-line">
                 <span>When?</span><br>
                 <img id="when-icon" src='https://static.wixstatic.com/media/de271e_99334077334348128459dcffdcf5262f~mv2.png/v1/fill/w_512,h_512,al_c/de271e_99334077334348128459dcffdcf5262f~mv2.png'>
-                <div id="when-column-bounds">
+                <div hidden id="when-column-bounds">
                   <div id="when-column-left">
                     <!-- <label class="form-line"> -->
                       <span>Date:</span>
@@ -227,7 +228,7 @@
     <div hidden id="new-chat-popup"></div>
   </main>
 </div>
-<script src="https://www.gstatic.com/firebasejs/3.7.5/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/3.9.0/firebase.js"></script>
 <script>
   // Initialize Firebase
   var config = {
