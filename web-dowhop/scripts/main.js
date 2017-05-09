@@ -235,80 +235,8 @@ FriendlyChat.prototype.removeChats = function() {
   this.chatItemData.innerHTML = "Your DoWhop details will appear here!";
 }
 
-
-FriendlyChat.prototype.checkItemForPendings = function(id) {
-  // let id = this.chatItemDataSpecific = document.getElementById("show-chat-data").children[0].id
-  var myRef = this.database.ref().child('chats/' + id + '/pending/');
-
-  var pendingDiv = this.pendingDiv;
-  var myApprovalForm = this.approvalForm;
-  var myRescindingForm = this.rescindingForm;
-
-  this.approvalForm.setAttribute("hidden", "true");
-  this.rescindingForm.setAttribute("hidden", "true");
-  this.pendingDiv.innerHTML = '';
-  this.pendingDiv.setAttribute("hidden", "true");
-
-
-  var checkForPendings = function(data) {
-
-    var pendingNotification = '';
-
-    console.log("something was changed!");
-
-    // Check if there are pending notifications:
-    if ((data.val().pending != null) && (data.val().pending.status != "approved") && (data.val().pending.status != "denied")) {
-
-      console.log("pending status true. showing pending div.");
-
-      pendingDiv.removeAttribute('hidden');
-
-      // This means visiting user is the creator of event:
-      if (firebase.auth().currentUser.uid == data.val().creator) {
-
-          console.log("visiting user is the creator. showing approval form, hiding rescind form.")
-
-          pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
-          pendingDiv.innerText = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
-
-          myApprovalForm.removeAttribute('hidden');
-          myRescindingForm.setAttribute('hidden', 'true');
-
-      // This means visiting user is a requestor of event change:
-    } else if (firebase.auth().currentUser.uid == data.val().pending.requester) {
-
-        console.log("visiting user requested a change. showing rescinding form, hiding approval form.")
-
-        pendingNotification = "You have requested this time!\nDo you want to change it?";
-        pendingDiv.innerText = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
-
-        myRescindingForm.removeAttribute('hidden');
-        myApprovalForm.setAttribute('hidden', 'true');
-
-      }
-
-    } else {
-
-      console.log("this means it has passed over logic tests.")
-      // pendingDiv.setAttribute('hidden', 'true');
-      pendingDiv.innerText = '';
-      myApprovalForm.setAttribute('hidden', 'true');
-      myRescindingForm.setAttribute('hidden', 'true');
-
-    }
-  }
-
-    myRef.on('child_added', snap => {
-      checkForPendings(snap);
-    })
-
-    myRef.on('child_changed', snap => {
-      checkForPendings(snap);
-    });
-
-}
-
 FriendlyChat.prototype.loadChats = function() {
+
   // First, make sure the view element is chosen:
   var myView = this.chatList;
   var myViewMessageList = this.messageList;
@@ -316,12 +244,11 @@ FriendlyChat.prototype.loadChats = function() {
   var me = this.auth.currentUser;
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
-
+  // Add parts for the notification-pending displays:
   var pendingDiv = this.pendingDiv;
   var myApprovalForm = this.approvalForm;
   var myRescindingForm = this.rescindingForm;
-
-  let myReset = this.newChatPopup;
+  var myReset = this.newChatPopup;
 
   var makeEventDisplay = function(item, snap) {
     item.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
@@ -372,7 +299,7 @@ FriendlyChat.prototype.loadChats = function() {
         myApprovalForm.setAttribute('hidden', 'true');
 
       }
-
+      // All other cases:
     } else {
 
       console.log("this means it has passed over logic tests.")
@@ -382,18 +309,9 @@ FriendlyChat.prototype.loadChats = function() {
       myRescindingForm.setAttribute('hidden', 'true');
 
     }
-    // FriendlyChat.makeEventDisplay(myChatData, data);
   };
 
-  // myRef.on('child_changed', snap => {
-  //   checkForPendings(snap)
-  // });
-
-
-
-  // myRef.on('child_added', snap => {
-  //   checkForPendings(snap)
-  // });
+  // NOTE: Check the event-listener design to ensure this UI timing works:
 
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
@@ -414,14 +332,12 @@ FriendlyChat.prototype.loadChats = function() {
         myChatData.innerText = snap.val().title;
 
         makeEventDisplay(myChatData, snap);
-        checkForPendings(snap.key, snap);
-        // // Checking for pending messages
-        // checkForPendings(snap);
+        checkForPendings(snap.key, snap); // <-- Check
       });
       myView.appendChild(button);
   });
 
-  myRef.on('child_changed', snap => {
+  myRef.on('child_changed', snap => { // <-- Check
     makeEventDisplay(myChatData, snap),
     checkForPendings(snap.key, snap);
   });
@@ -635,7 +551,7 @@ FriendlyChat.prototype.onAuthStateChanged = function(user) {
 
     // We want to reset the page and load currently existing threads:
     this.loadChats();
-    // this.checkItemForPendings(); // FIX
+
     // We want to save currently signed-in user.
     this.saveUser();
 
