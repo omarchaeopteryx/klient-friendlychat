@@ -284,7 +284,7 @@ h1,h2,h3,h4,h5 { font-family: Avenir }
 }
 
 .pending-notification {
-  color: pink;
+  color: red;
   font-size: 1em;
   background-color: #ECECEC;
 }

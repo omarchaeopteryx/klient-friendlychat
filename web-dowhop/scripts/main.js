@@ -245,48 +245,95 @@ FriendlyChat.prototype.loadChats = function() {
   var me = this.auth.currentUser;
   var myRef = this.database.ref().child('chats/');
   var myChatData = this.chatItemData;
+
+  var pendingDiv = this.pendingDiv;
   var myApprovalForm = this.approvalForm;
   var myRescindingForm = this.rescindingForm;
-  var pendingDiv = this.pendingDiv;
-  let showPendings = this.showPendings;
+
   let myReset = this.newChatPopup;
 
   var checkForPendings = function(data) {
 
-    // myApprovalForm.setAttribute("hidden", "false");
-    // myRescindingForm.setAttribute("hidden", "false");
-    // pendingDiv.setAttribute("hidden", "false");
+    // myApprovalForm.setAttribute("hidden", "true");
+    // myRescindingForm.setAttribute("hidden", "true");
+    // pendingDiv.setAttribute("hidden", "true");
 
     var pendingNotification = '';
 
     console.log("something was changed!");
 
-    // Case where visiting user is the creator of the event (and has authority to allow time change):
-    if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status === true) {
+    // Check if there are pending notifications
+      // debugger;
+    if (data.val().pending != null && data.val().pending.status != "approved" && data.val().pending.status != "denied") {
 
-      pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+      console.log("pending status true. showing pending div.");
+
       pendingDiv.removeAttribute('hidden');
-      myApprovalForm.removeAttribute('hidden');
-      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+
+      // This means visiting user is the creator of event:
+      if (firebase.auth().currentUser.uid == data.val().creator) {
+
+          console.log("visiting user is the creator. showing approval form, hiding rescind form.")
+
+          pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+          pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+
+          myApprovalForm.removeAttribute('hidden');
+          myRescindingForm.setAttribute('hidden', 'true');
+
+      // This means visiting user is a requestor of event change:
+    } else if (firebase.auth().currentUser.uid == data.val().pending.requester) {
+
+        console.log("visiting user requested a change. showing rescinding form, hiding approval form.")
+
+        pendingNotification = "You have requested this time!\nDo you want to change it?";
+        pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+
+        myRescindingForm.removeAttribute('hidden');
+        myApprovalForm.setAttribute('hidden', 'true');
+
+      }
+
+    } else {
+
+      console.log("this means it has passed over logic tests.")
+      // pendingDiv.setAttribute('hidden', 'true');
+      pendingDiv.innerHTML = '';
+      myApprovalForm.setAttribute('hidden', 'true');
       myRescindingForm.setAttribute('hidden', 'true');
 
-    // Case where visiting user is the requester of the event time change:
-    } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status === true) {
-
-      pendingNotification = "You have requested this time!\nDo you want to change it?";
-      pendingDiv.removeAttribute('hidden');
-      myRescindingForm.removeAttribute('hidden');
-      pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
-      myApprovalForm.setAttribute('hidden', 'true');
-
-    // All other cases:
-    } else {
-      pendingDiv.setAttribute('hidden', 'true');
-      pendingDiv.innerHTML = '';
-      // myApprovalForm.setAttribute('hidden', 'true');
-      // myRescindingForm.setAttribute('hidden', 'true');
     }
+
+// // FIX
+//     // Case where visiting user is the creator of the event (and has authority to allow time change):
+//     if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().creator && data.val().pending.status === true) {
+//
+//       pendingNotification = "Someone has requested this time.\nDo you want to approve it?"
+//       pendingDiv.removeAttribute('hidden');
+//       myApprovalForm.removeAttribute('hidden');
+//       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenTimePending;
+//       myRescindingForm.setAttribute('hidden', 'true');
+//
+//     // Case where visiting user is the requester of the event time change:
+//     } else if (data.val().pending != null && firebase.auth().currentUser.uid == data.val().pending.requester && data.val().pending.status === true) {
+//
+//       pendingNotification = "You have requested this time!\nDo you want to change it?";
+//       pendingDiv.removeAttribute('hidden');
+//       myRescindingForm.removeAttribute('hidden');
+//       pendingDiv.innerHTML = pendingNotification + "\nRequested: " + data.val().pending.whenDatePending + " at " + data.val().pending.whenDatePending;
+//       myApprovalForm.setAttribute('hidden', 'true');
+//
+//     // All other cases:
+//     } else {
+//
+//       // pendingDiv.setAttribute('hidden', 'true');
+//       pendingDiv.innerHTML = '';
+//       myApprovalForm.setAttribute('hidden', 'true');
+//       myRescindingForm.setAttribute('hidden', 'true');
+//
+//     }
     // Updating the views for new database information:
+
     myChatData.innerHTML = "<h3 id='" + data.key + "'>" + data.val().title + '</h3>' +
             "<p>Click  to load messages.</p>" +
             "<h5>What?</h5>" +
@@ -299,8 +346,13 @@ FriendlyChat.prototype.loadChats = function() {
             "<p>" + data.val().where + "</p>"
   };
 
-  myRef.on('child_changed', checkForPendings);
-  myRef.on('child_added', checkForPendings);
+  myRef.on('child_changed', snap => {
+    checkForPendings(snap)
+  });
+  // myRef.on('child_added', snap => {
+  //   checkForPendings(snap);
+  // });
+
   myRef.on('child_added', snap => {
     // Creating the buttons to further load chat data:
       var container = document.createElement('div');
@@ -315,25 +367,26 @@ FriendlyChat.prototype.loadChats = function() {
         // Resetting error messages and forms:
         myReset.setAttribute("hidden", "true");
         myViewMessageList.innerText = '';
+
+        // pendingDiv.setAttribute("hidden", "true");
         // myApprovalForm.setAttribute("hidden", "true");
         // myRescindingForm.setAttribute("hidden", "true");
-        // pendingDiv.setAttribute("hidden", "true");
 
         myChatData.innerText = snap.val().title;
 
-        // myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
-        //         "<p>Click  to load messages.</p>" +
-        //         "<h5>What?</h5>" +
-        //         "<p>" + (snap.val().what || 'TBD') + "</p>" +
-        //         "<h5>When?</h5>" +
-        //         "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
-        //         "<h5>Who?</h5>" +
-        //         "<p>" + snap.val().who + "</p>" +
-        //         "<h5>Where?</h5>" +
-        //         "<p>" + snap.val().where + "</p>"
+        myChatData.innerHTML = "<h3 id='" + snap.key + "'>" + snap.val().title + '</h3>' +
+                "<p>Click  to load messages.</p>" +
+                "<h5>What?</h5>" +
+                "<p>" + (snap.val().what || 'TBD') + "</p>" +
+                "<h5>When?</h5>" +
+                "<p>" + snap.val().whenDate + ' at ' + snap.val().whenTime + "</p>" +
+                "<h5>Who?</h5>" +
+                "<p>" + snap.val().who + "</p>" +
+                "<h5>Where?</h5>" +
+                "<p>" + snap.val().where + "</p>"
 
-        // Checking for pending messages
-        checkForPendings(snap);
+        // // Checking for pending messages
+        // checkForPendings(snap);
       });
       myView.appendChild(button);
   });
